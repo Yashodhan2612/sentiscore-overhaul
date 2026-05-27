@@ -1,0 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,300;1,8..60,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ─── LIGHT MODE (default) ─── */
+  :root {
+    --background:    220 20% 97%;
+    --foreground:    215 30% 8%;
+
+    --card:          0 0% 100%;
+    --card-foreground: 215 30% 8%;
+
+    --popover:       0 0% 100%;
+    --popover-foreground: 215 30% 8%;
+
+    /* Bloomberg amber — same in both modes */
+    --primary:       35 96% 50%;
+    --primary-foreground: 215 28% 6%;
+
+    --secondary:     220 16% 93%;
+    --secondary-foreground: 215 30% 8%;
+
+    --muted:         220 16% 93%;
+    --muted-foreground: 215 16% 48%;
+
+    --accent:        220 16% 93%;
+    --accent-foreground: 215 30% 8%;
+
+    --destructive:   0 68% 44%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:        220 14% 88%;
+    --input:         220 16% 92%;
+    --ring:          35 96% 50%;
+
+    --radius: 0.25rem;
+
+    /* Semantic data — slightly deeper for light bg legibility */
+    --positive:      142 60% 32%;
+    --negative:      0 65% 44%;
+    --caution:       38 85% 38%;
+    --info:          212 75% 44%;
+    --data-muted:    215 12% 52%;
+
+    /* Surface hierarchy */
+    --surface:       0 0% 100%;
+    --surface-2:     220 18% 96%;
+    --surface-elevated: 220 16% 92%;
+
+    /* Text hierarchy */
+    --text-primary:  215 30% 8%;
+    --text-secondary: 215 18% 30%;
+    --text-tertiary: 215 14% 52%;
+
+    /* Sidebar */
+    --sidebar-background: 220 20% 97%;
+    --sidebar-foreground: 215 30% 8%;
+    --sidebar-primary: 35 96% 50%;
+    --sidebar-primary-foreground: 215 28% 6%;
+    --sidebar-accent: 220 16% 93%;
+    --sidebar-accent-foreground: 215 30% 8%;
+    --sidebar-border: 220 14% 88%;
+    --sidebar-ring: 35 96% 50%;
+  }
+
+  /* ─── DARK MODE ─── */
+  .dark {
+    --background:    215 28% 6%;
+    --foreground:    210 22% 90%;
+
+    --card:          215 25% 9%;
+    --card-foreground: 210 22% 90%;
+
+    --popover:       215 24% 12%;
+    --popover-foreground: 210 22% 90%;
+
+    --primary:       35 96% 50%;
+    --primary-foreground: 215 28% 6%;
+
+    --secondary:     215 24% 12%;
+    --secondary-foreground: 210 22% 90%;
+
+    --muted:         215 22% 14%;
+    --muted-foreground: 210 14% 50%;
+
+    --accent:        215 22% 14%;
+    --accent-foreground: 210 22% 90%;
+
+    --destructive:   0 68% 50%;
+    --destructive-foreground: 210 22% 90%;
+
+    --border:        215 18% 16%;
+    --input:         215 22% 14%;
+    --ring:          35 96% 50%;
+
+    --positive:      142 69% 43%;
+    --negative:      0 68% 50%;
+    --caution:       38 90% 48%;
+    --info:          212 80% 58%;
+    --data-muted:    210 14% 36%;
+
+    --surface:       215 25% 9%;
+    --surface-2:     215 24% 12%;
+    --surface-elevated: 215 22% 14%;
+
+    --text-primary:  210 22% 90%;
+    --text-secondary: 210 16% 60%;
+    --text-tertiary: 210 12% 40%;
+
+    --sidebar-background: 215 28% 6%;
+    --sidebar-foreground: 210 22% 90%;
+    --sidebar-primary: 35 96% 50%;
+    --sidebar-primary-foreground: 215 28% 6%;
+    --sidebar-accent: 215 22% 14%;
+    --sidebar-accent-foreground: 210 22% 90%;
+    --sidebar-border: 215 18% 16%;
+    --sidebar-ring: 35 96% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'SF Pro Text', system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+}
+
+@layer utilities {
+  /* Monospace numerics — applies to all financial numbers */
+  .font-mono {
+    font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    font-feature-settings: 'tnum' 1, 'zero' 1;
+  }
+
+  /* Serif for reading-mode content (transcripts, AI summaries) */
+  .font-serif {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  }
+
+  /* Score number — mono + bold */
+  .score-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-feature-settings: 'tnum' 1;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* Ticker — mono + tracked caps */
+  .ticker-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  /* Positive delta */
+  .delta-pos { color: hsl(var(--positive)); }
+  /* Negative delta */
+  .delta-neg { color: hsl(var(--negative)); }
+  /* Neutral delta */
+  .delta-muted { color: hsl(var(--text-tertiary)); }
+
+  /* Table label row — bloomberg-style */
+  .th-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: hsl(var(--text-tertiary));
+  }
+
+  /* Underline active tab indicator */
+  .tab-active {
+    border-bottom: 2px solid hsl(var(--primary));
+    color: hsl(var(--foreground));
+  }
+
+  /* Score underline bar (replaces pill badges) */
+  .score-bar-pos { border-bottom: 2px solid hsl(var(--positive)); }
+  .score-bar-neg { border-bottom: 2px solid hsl(var(--negative)); }
+  .score-bar-warn { border-bottom: 2px solid hsl(var(--caution)); }
+}
+
+/* ─── Smooth theme transition ─── */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 0.28s ease,
+    border-color 0.28s ease,
+    color 0.18s ease,
+    fill 0.18s ease,
+    stroke 0.18s ease,
+    box-shadow 0.28s ease !important;
+}
+
+/* Custom thin scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--text-tertiary)); }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--surface-elevated)) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}

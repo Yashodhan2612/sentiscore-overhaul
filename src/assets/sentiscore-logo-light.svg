@@ -1,0 +1,47 @@
+<svg width="220" height="48" viewBox="0 0 220 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="SentiScore">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#0C1526"/>
+      <stop offset="100%" stop-color="#14213A"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="halo" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="h"/>
+      <feMerge><feMergeNode in="h"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Icon badge (always dark — brand badge) -->
+  <rect x="2" y="2" width="44" height="44" rx="9" fill="url(#bg)"/>
+  <rect x="2" y="2" width="44" height="44" rx="9" stroke="#1E3860" stroke-width="0.75"/>
+
+  <!-- Guide lines -->
+  <line x1="5" y1="34" x2="43" y2="34" stroke="#1A3050" stroke-width="0.5"/>
+  <line x1="24" y1="5" x2="24" y2="43" stroke="#1A3050" stroke-width="0.5" stroke-dasharray="2 3"/>
+
+  <!-- EKG signal -->
+  <path d="M 5 34 L 15 34 L 18 28 L 24 11 L 30 34 L 43 34"
+        stroke="#F59E0B" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round"
+        filter="url(#glow)"/>
+
+  <!-- Score peak target dot -->
+  <circle cx="24" cy="11" r="8"   fill="#F59E0B" opacity="0.10" filter="url(#halo)"/>
+  <circle cx="24" cy="11" r="5"   fill="#0C1526"/>
+  <circle cx="24" cy="11" r="5"   stroke="#F59E0B" stroke-width="1.75"/>
+  <circle cx="24" cy="11" r="2.2" fill="#FCD34D"/>
+
+  <!-- Tick marks -->
+  <line x1="17" y1="32.5" x2="17" y2="35.5" stroke="#F59E0B" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+  <line x1="31" y1="32.5" x2="31" y2="35.5" stroke="#F59E0B" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Wordmark — dark text for light backgrounds -->
+  <text x="58" y="32"
+        font-family="'SF Pro Display','Inter','Segoe UI',system-ui,sans-serif"
+        font-size="22" font-weight="700" letter-spacing="-0.015em">
+    <tspan fill="#0F172A">Senti</tspan><tspan fill="#D97706">Score</tspan>
+  </text>
+</svg>
