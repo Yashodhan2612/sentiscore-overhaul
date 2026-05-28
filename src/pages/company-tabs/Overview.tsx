@@ -1,18 +1,25 @@
 import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, ChevronRight, FileText } from "lucide-react";
+import { AlertTriangle, ChevronRight, FileText, Info } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ESS_FORMULA_LABEL } from "@/lib/ess";
 
 const QUARTERLY = [
-  { q: "Q4'22", l1: 68, l2: 61, l3: 55, cci: 64 },
-  { q: "Q1'23", l1: 71, l2: 63, l3: 58, cci: 67 },
-  { q: "Q2'23", l1: 74, l2: 65, l3: 60, cci: 70 },
-  { q: "Q3'23", l1: 70, l2: 66, l3: 62, cci: 68 },
-  { q: "Q4'23", l1: 73, l2: 68, l3: 64, cci: 70 },
-  { q: "Q1'24", l1: 75, l2: 70, l3: 66, cci: 72 },
-  { q: "Q2'24", l1: 76, l2: 71, l3: 68, cci: 74 },
-  { q: "Q3'24", l1: 78, l2: 73, l3: 69, cci: 76 },
+  { q: "Q4'22", l1: 68, l2: 61, l3: 55, ess: 64 },
+  { q: "Q1'23", l1: 71, l2: 63, l3: 58, ess: 67 },
+  { q: "Q2'23", l1: 74, l2: 65, l3: 60, ess: 70 },
+  { q: "Q3'23", l1: 70, l2: 66, l3: 62, ess: 68 },
+  { q: "Q4'23", l1: 73, l2: 68, l3: 64, ess: 70 },
+  { q: "Q1'24", l1: 75, l2: 70, l3: 66, ess: 72 },
+  { q: "Q2'24", l1: 76, l2: 71, l3: 68, ess: 74 },
+  { q: "Q3'24", l1: 78, l2: 73, l3: 69, ess: 76 },
 ];
 
 const SECTOR_MEDIAN = 68;
@@ -84,7 +91,18 @@ const Overview = () => {
       {/* Decision strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-card border border-border rounded p-4 flex flex-col">
-          <span className="th-label mb-1">Composite CCI</span>
+          <TooltipProvider>
+            <UITooltip>
+              <TooltipTrigger asChild>
+                <span className="th-label mb-1 inline-flex items-center gap-1 cursor-default w-fit">
+                  ESS <Info className="h-3 w-3 text-text-tertiary" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs max-w-52">
+                {ESS_FORMULA_LABEL}
+              </TooltipContent>
+            </UITooltip>
+          </TooltipProvider>
           <span className="score-num text-4xl text-positive">78</span>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             <span className="font-mono text-xs delta-pos">+2 vs Q2</span>
@@ -98,7 +116,7 @@ const Overview = () => {
         <div className="bg-card border border-border rounded p-4">
           <span className="th-label mb-1 block">L1 Transcript (62%)</span>
           <span className="score-num text-3xl text-positive">82</span>
-          <div className="mt-1 text-xs text-text-tertiary">ESS · Tone Gap · CEO/CFO</div>
+          <div className="mt-1 text-xs text-text-tertiary">OSS · Tone Gap · CEO/CFO</div>
         </div>
         <div className="bg-card border border-border rounded p-4">
           <span className="th-label mb-1 block">L2 News (23%)</span>
@@ -120,16 +138,16 @@ const Overview = () => {
         <div className="lg:col-span-7 space-y-3">
           <div className="bg-card border border-border rounded p-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium">CCI Evolution <span className="text-xs text-text-tertiary font-normal ml-1">8 quarters</span></span>
+              <span className="text-sm font-medium">ESS Evolution <span className="text-xs text-text-tertiary font-normal ml-1">8 quarters</span></span>
               <div className="flex items-center gap-3 text-xs text-text-tertiary">
-                <span className="flex items-center gap-1.5"><span className="inline-block w-5 h-0.5 bg-positive rounded" /> CCI</span>
+                <span className="flex items-center gap-1.5"><span className="inline-block w-5 h-0.5 bg-positive rounded" /> ESS</span>
                 <span className="flex items-center gap-1.5"><span className="inline-block w-5 border-t border-dashed border-data-muted" /> Sector med.</span>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={130}>
               <AreaChart data={QUARTERLY} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="cciGrad" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="essGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(142,69%,43%)" stopOpacity={0.15} />
                     <stop offset="95%" stopColor="hsl(142,69%,43%)" stopOpacity={0} />
                   </linearGradient>
@@ -138,7 +156,7 @@ const Overview = () => {
                 <YAxis domain={[55, 100]} tick={{ fontSize: 10, fill: "hsl(210,12%,40%)" }} axisLine={false} tickLine={false} />
                 <ReferenceLine y={SECTOR_MEDIAN} stroke="hsl(210,14%,36%)" strokeDasharray="3 3" strokeWidth={1} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="cci" name="CCI" stroke="hsl(142,69%,43%)" strokeWidth={1.5} fill="url(#cciGrad)" dot={false} />
+                <Area type="monotone" dataKey="ess" name="ESS" stroke="hsl(142,69%,43%)" strokeWidth={1.5} fill="url(#essGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

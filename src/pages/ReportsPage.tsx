@@ -20,7 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
 const TEMPLATES = [
-  { id: "pre-earn", label: "Pre-Earnings Brief", desc: "CCI snapshot + top risks & catalysts + tone summary" },
+  { id: "pre-earn", label: "Pre-Earnings Brief", desc: "ESS snapshot + top risks & catalysts + tone summary" },
   { id: "post-earn", label: "Post-Earnings Recap", desc: "Score delta analysis + management tone assessment" },
   { id: "weekly", label: "Watchlist Weekly", desc: "All book names — weekly delta table + anomalies" },
   { id: "deep-dive", label: "Single-Name Deep Dive", desc: "Full 20-dimension breakdown + transcript highlights" },

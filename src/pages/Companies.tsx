@@ -1,31 +1,37 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { Search, Table2, LayoutGrid, GitCompare, ChevronDown, ArrowUpRight, ArrowDownRight, SlidersHorizontal, X } from "lucide-react";
+import { Search, Table2, LayoutGrid, GitCompare, ChevronDown, ArrowUpRight, ArrowDownRight, SlidersHorizontal, X, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getESSColor, ESS_FORMULA_LABEL } from "@/lib/ess";
+import { toast } from "sonner";
 
 const COMPANIES = [
-  { ticker: "AAPL", name: "Apple Inc.", sector: "Technology", mktCap: "3.52T", cci: 78, cciDelta: +2, toneGap: 27, newRisks: 0, nextEarnings: "Oct 30", inBook: true },
-  { ticker: "MSFT", name: "Microsoft Corp.", sector: "Technology", mktCap: "3.11T", cci: 84, cciDelta: +5, toneGap: 14, newRisks: 0, nextEarnings: "Oct 23", inBook: true },
-  { ticker: "NVDA", name: "NVIDIA Corp.", sector: "Semiconductors", mktCap: "2.15T", cci: 91, cciDelta: +8, toneGap: 9, newRisks: 1, nextEarnings: "Nov 20", inBook: true },
-  { ticker: "GOOGL", name: "Alphabet Inc.", sector: "Technology", mktCap: "2.04T", cci: 72, cciDelta: -3, toneGap: 31, newRisks: 2, nextEarnings: "Oct 29", inBook: true },
-  { ticker: "AMZN", name: "Amazon.com Inc.", sector: "Consumer", mktCap: "1.90T", cci: 75, cciDelta: +1, toneGap: 19, newRisks: 0, nextEarnings: "Oct 30", inBook: false },
-  { ticker: "META", name: "Meta Platforms", sector: "Technology", mktCap: "1.37T", cci: 79, cciDelta: +1, toneGap: 18, newRisks: 0, nextEarnings: "Oct 30", inBook: true },
-  { ticker: "TSLA", name: "Tesla Inc.", sector: "Consumer", mktCap: "0.79T", cci: 58, cciDelta: +6, toneGap: 42, newRisks: 3, nextEarnings: "Oct 23", inBook: true },
-  { ticker: "JPM", name: "JPMorgan Chase", sector: "Financials", mktCap: "0.62T", cci: 65, cciDelta: -4, toneGap: 22, newRisks: 1, nextEarnings: "Oct 11", inBook: true },
-  { ticker: "GS", name: "Goldman Sachs", sector: "Financials", mktCap: "0.17T", cci: 73, cciDelta: +2, toneGap: 16, newRisks: 0, nextEarnings: "Oct 15", inBook: true },
-  { ticker: "NFLX", name: "Netflix Inc.", sector: "Technology", mktCap: "0.31T", cci: 80, cciDelta: +3, toneGap: 12, newRisks: 0, nextEarnings: "Oct 17", inBook: false },
-  { ticker: "V", name: "Visa Inc.", sector: "Financials", mktCap: "0.55T", cci: 77, cciDelta: +1, toneGap: 11, newRisks: 0, nextEarnings: "Oct 22", inBook: false },
-  { ticker: "UNH", name: "UnitedHealth Group", sector: "Healthcare", mktCap: "0.43T", cci: 69, cciDelta: -2, toneGap: 20, newRisks: 1, nextEarnings: "Oct 15", inBook: false },
+  { ticker: "AAPL", name: "Apple Inc.", sector: "Technology", mktCap: "3.52T", ess: 78, essDelta: +2, toneGap: 27, newRisks: 0, nextEarnings: "Oct 30", inBook: true },
+  { ticker: "MSFT", name: "Microsoft Corp.", sector: "Technology", mktCap: "3.11T", ess: 84, essDelta: +5, toneGap: 14, newRisks: 0, nextEarnings: "Oct 23", inBook: true },
+  { ticker: "NVDA", name: "NVIDIA Corp.", sector: "Semiconductors", mktCap: "2.15T", ess: 91, essDelta: +8, toneGap: 9, newRisks: 1, nextEarnings: "Nov 20", inBook: true },
+  { ticker: "GOOGL", name: "Alphabet Inc.", sector: "Technology", mktCap: "2.04T", ess: 72, essDelta: -3, toneGap: 31, newRisks: 2, nextEarnings: "Oct 29", inBook: true },
+  { ticker: "AMZN", name: "Amazon.com Inc.", sector: "Consumer", mktCap: "1.90T", ess: 75, essDelta: +1, toneGap: 19, newRisks: 0, nextEarnings: "Oct 30", inBook: false },
+  { ticker: "META", name: "Meta Platforms", sector: "Technology", mktCap: "1.37T", ess: 79, essDelta: +1, toneGap: 18, newRisks: 0, nextEarnings: "Oct 30", inBook: true },
+  { ticker: "TSLA", name: "Tesla Inc.", sector: "Consumer", mktCap: "0.79T", ess: 58, essDelta: +6, toneGap: 42, newRisks: 3, nextEarnings: "Oct 23", inBook: true },
+  { ticker: "JPM", name: "JPMorgan Chase", sector: "Financials", mktCap: "0.62T", ess: 65, essDelta: -4, toneGap: 22, newRisks: 1, nextEarnings: "Oct 11", inBook: true },
+  { ticker: "GS", name: "Goldman Sachs", sector: "Financials", mktCap: "0.17T", ess: 73, essDelta: +2, toneGap: 16, newRisks: 0, nextEarnings: "Oct 15", inBook: true },
+  { ticker: "NFLX", name: "Netflix Inc.", sector: "Technology", mktCap: "0.31T", ess: 80, essDelta: +3, toneGap: 12, newRisks: 0, nextEarnings: "Oct 17", inBook: false },
+  { ticker: "V", name: "Visa Inc.", sector: "Financials", mktCap: "0.55T", ess: 77, essDelta: +1, toneGap: 11, newRisks: 0, nextEarnings: "Oct 22", inBook: false },
+  { ticker: "UNH", name: "UnitedHealth Group", sector: "Healthcare", mktCap: "0.43T", ess: 69, essDelta: -2, toneGap: 20, newRisks: 1, nextEarnings: "Oct 15", inBook: false },
 ];
 
-type SortKey = "cci" | "cciDelta" | "toneGap" | "mktCap" | "nextEarnings";
-
-const getCCIColor = (v: number) => v >= 75 ? "text-positive" : v >= 55 ? "text-caution" : "text-negative";
+type SortKey = "ess" | "essDelta" | "toneGap" | "mktCap" | "nextEarnings";
 
 const EARNINGS_STRIP = [
   { date: "Oct 11", tickers: ["JPM", "GS", "UNH"] },
@@ -36,18 +42,27 @@ const EARNINGS_STRIP = [
 ];
 
 const Companies = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "grid" | "comparison">("table");
   const [sectorFilter, setSectorFilter] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
-  const [sortKey, setSortKey] = useState<SortKey>("cci");
+  const [sortKey, setSortKey] = useState<SortKey>("ess");
   const [sortDir, setSortDir] = useState<1 | -1>(-1);
 
   const sectors = ["All", ...Array.from(new Set(COMPANIES.map(c => c.sector)))];
 
-  const toggle = (ticker: string) =>
-    setSelected(s => s.includes(ticker) ? s.filter(t => t !== ticker) : [...s, ticker]);
+  const toggle = (ticker: string) => {
+    setSelected(s => {
+      if (s.includes(ticker)) return s.filter(t => t !== ticker);
+      if (s.length >= 4) {
+        toast("Max 4 companies for comparison", { description: "Remove one before adding another." });
+        return s;
+      }
+      return [...s, ticker];
+    });
+  };
 
   const setSort = (k: SortKey) => {
     if (k === sortKey) setSortDir(d => d === 1 ? -1 : 1);
@@ -63,6 +78,15 @@ const Companies = () => {
       if (sortKey === "mktCap") return sortDir * (parseFloat(b.mktCap) - parseFloat(a.mktCap));
       return sortDir * ((b[sortKey] as number) - (a[sortKey] as number));
     });
+
+  const handleCompare = () => {
+    if (selected.length < 2) {
+      toast("Select at least 2 companies to compare");
+      return;
+    }
+    const [anchor, ...peers] = selected;
+    navigate(`/compare?anchor=${anchor}&peers=${peers.join(",")}`);
+  };
 
   const SortHeader = ({ k, label }: { k: SortKey; label: string }) => (
     <th
@@ -147,13 +171,30 @@ const Companies = () => {
             <thead>
               <tr className="border-b border-border">
                 <th className="px-3 py-2 w-8">
-                  <input type="checkbox" className="accent-primary" onChange={e => setSelected(e.target.checked ? sorted.map(c => c.ticker) : [])} />
+                  <input type="checkbox" className="accent-primary" onChange={e => setSelected(e.target.checked ? sorted.slice(0, 4).map(c => c.ticker) : [])} />
                 </th>
                 <th className="text-left px-3 py-2 th-label">Ticker</th>
                 <th className="text-left px-3 py-2 th-label hidden md:table-cell">Sector</th>
                 <th className="text-right px-3 py-2 th-label hidden lg:table-cell">Mkt Cap</th>
-                <SortHeader k="cci" label="CCI" />
-                <SortHeader k="cciDelta" label="Δ 7d" />
+                <th
+                  className="text-right px-3 py-2 th-label cursor-pointer hover:text-foreground transition-colors select-none"
+                  onClick={() => setSort("ess")}
+                >
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1">
+                          ESS <Info className="h-3 w-3 text-text-tertiary" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs max-w-48">
+                        {ESS_FORMULA_LABEL}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  {sortKey === "ess" ? (sortDir === -1 ? " ↓" : " ↑") : ""}
+                </th>
+                <SortHeader k="essDelta" label="Δ 7d" />
                 <SortHeader k="toneGap" label="Tone Gap" />
                 <th className="text-right px-3 py-2 th-label">New Risks</th>
                 <th className="text-left px-3 py-2 th-label hidden xl:table-cell">Next Earnings</th>
@@ -183,12 +224,12 @@ const Companies = () => {
                   <td className="px-3 py-2.5 text-xs text-text-secondary hidden md:table-cell">{c.sector}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-xs text-text-secondary hidden lg:table-cell">${c.mktCap}</td>
                   <td className="px-3 py-2.5 text-right">
-                    <span className={`score-num text-sm ${getCCIColor(c.cci)}`}>{c.cci}</span>
+                    <span className={`score-num text-sm ${getESSColor(c.ess)}`}>{c.ess}</span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <span className={`font-mono text-xs flex items-center justify-end gap-0.5 ${c.cciDelta > 0 ? "delta-pos" : c.cciDelta < 0 ? "delta-neg" : "delta-muted"}`}>
-                      {c.cciDelta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                      {c.cciDelta > 0 ? "+" : ""}{c.cciDelta}
+                    <span className={`font-mono text-xs flex items-center justify-end gap-0.5 ${c.essDelta > 0 ? "delta-pos" : c.essDelta < 0 ? "delta-neg" : "delta-muted"}`}>
+                      {c.essDelta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                      {c.essDelta > 0 ? "+" : ""}{c.essDelta}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
@@ -224,10 +265,10 @@ const Companies = () => {
             >
               <div className="flex items-start justify-between mb-2">
                 <span className="ticker-badge text-primary">{c.ticker}</span>
-                <span className={`font-mono text-xs ${c.cciDelta > 0 ? "delta-pos" : "delta-neg"}`}>{c.cciDelta > 0 ? "+" : ""}{c.cciDelta}</span>
+                <span className={`font-mono text-xs ${c.essDelta > 0 ? "delta-pos" : "delta-neg"}`}>{c.essDelta > 0 ? "+" : ""}{c.essDelta}</span>
               </div>
-              <div className={`score-num text-2xl ${getCCIColor(c.cci)} mb-1`}>{c.cci}</div>
-              <div className="th-label">CCI</div>
+              <div className={`score-num text-2xl ${getESSColor(c.ess)} mb-1`}>{c.ess}</div>
+              <div className="th-label">ESS</div>
               <div className="mt-2 text-xs text-text-tertiary truncate">{c.sector}</div>
             </Link>
           ))}
@@ -237,8 +278,10 @@ const Companies = () => {
       {/* Selection bar */}
       {selected.length > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-card border border-border rounded-full px-4 py-2.5 flex items-center gap-3 shadow-2xl z-20">
-          <span className="text-xs text-text-secondary font-mono">{selected.length} selected</span>
-          <Button size="sm" className="h-6 text-xs bg-primary text-primary-foreground hover:bg-primary/90">Compare</Button>
+          <span className="text-xs text-text-secondary font-mono">{selected.length}/4 selected</span>
+          <Button size="sm" className="h-6 text-xs bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleCompare}>
+            <GitCompare className="h-3 w-3 mr-1" /> Compare
+          </Button>
           <Button size="sm" variant="outline" className="h-6 text-xs">Export</Button>
           <Button size="sm" variant="outline" className="h-6 text-xs">Add to Book</Button>
           <button onClick={() => setSelected([])} className="text-text-tertiary hover:text-foreground">
@@ -248,7 +291,7 @@ const Companies = () => {
       )}
 
       <div className="mt-2 text-xs text-text-tertiary">
-        {sorted.length} of {COMPANIES.length} names · CCI = Composite Confidence Index (0–100) ·
+        {sorted.length} of {COMPANIES.length} names · ESS = Extended SentiScore (50% OSS · 30% NSS · 20% SSS) ·
         <Link to="/company/AAPL" className="text-primary ml-1 hover:underline">Click any row to deep-dive</Link>
       </div>
     </Layout>

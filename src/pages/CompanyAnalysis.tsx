@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { useParams, Link, Outlet, useLocation } from "react-router-dom";
+import { useParams, Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Star, Download, ChevronDown, ArrowUpRight, AlertTriangle } from "lucide-react";
+import { Star, Download, ChevronDown, ArrowUpRight, AlertTriangle, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getESSColor, ESS_FORMULA_LABEL } from "@/lib/ess";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,22 +25,21 @@ import {
 } from "@/components/ui/select";
 import ExportModal from "@/components/ExportModal";
 
-const COMPANY_DATA: Record<string, { name: string; sector: string; price: string; chg: string; up: boolean; cci: number; cciDelta: number; toneGap: number; nextEarnings: string; lastAnalyzed: string }> = {
-  AAPL: { name: "Apple Inc.", sector: "Technology", price: "232.14", chg: "+0.8%", up: true, cci: 78, cciDelta: 2, toneGap: 27, nextEarnings: "Oct 30, 4:30pm ET", lastAnalyzed: "Oct 13, 2025" },
-  MSFT: { name: "Microsoft Corp.", sector: "Technology", price: "418.92", chg: "+1.2%", up: true, cci: 84, cciDelta: 5, toneGap: 14, nextEarnings: "Oct 23, 4:00pm ET", lastAnalyzed: "Oct 13, 2025" },
-  GOOGL: { name: "Alphabet Inc.", sector: "Technology", price: "164.52", chg: "-0.4%", up: false, cci: 72, cciDelta: -3, toneGap: 31, nextEarnings: "Oct 29, 4:00pm ET", lastAnalyzed: "Oct 12, 2025" },
-  NVDA: { name: "NVIDIA Corp.", sector: "Semiconductors", price: "875.40", chg: "+2.1%", up: true, cci: 91, cciDelta: 8, toneGap: 9, nextEarnings: "Nov 20, 4:00pm ET", lastAnalyzed: "Oct 11, 2025" },
-  TSLA: { name: "Tesla Inc.", sector: "Cons. Discretionary", price: "245.18", chg: "+3.2%", up: true, cci: 58, cciDelta: 6, toneGap: 42, nextEarnings: "Oct 23, 4:00pm ET", lastAnalyzed: "Oct 10, 2025" },
-  JPM: { name: "JPMorgan Chase", sector: "Financials", price: "211.80", chg: "-0.6%", up: false, cci: 65, cciDelta: -4, toneGap: 22, nextEarnings: "Oct 11, 7:00am ET", lastAnalyzed: "Oct 9, 2025" },
-  META: { name: "Meta Platforms", sector: "Technology", price: "536.30", chg: "+0.3%", up: true, cci: 79, cciDelta: 1, toneGap: 18, nextEarnings: "Oct 30, 4:00pm ET", lastAnalyzed: "Oct 13, 2025" },
-  GS: { name: "Goldman Sachs", sector: "Financials", price: "488.44", chg: "+0.9%", up: true, cci: 73, cciDelta: 2, toneGap: 16, nextEarnings: "Oct 15, 7:00am ET", lastAnalyzed: "Oct 8, 2025" },
+const COMPANY_DATA: Record<string, { name: string; sector: string; price: string; chg: string; up: boolean; ess: number; essDelta: number; toneGap: number; nextEarnings: string; lastAnalyzed: string }> = {
+  AAPL: { name: "Apple Inc.", sector: "Technology", price: "232.14", chg: "+0.8%", up: true, ess: 78, essDelta: 2, toneGap: 27, nextEarnings: "Oct 30, 4:30pm ET", lastAnalyzed: "Oct 13, 2025" },
+  MSFT: { name: "Microsoft Corp.", sector: "Technology", price: "418.92", chg: "+1.2%", up: true, ess: 84, essDelta: 5, toneGap: 14, nextEarnings: "Oct 23, 4:00pm ET", lastAnalyzed: "Oct 13, 2025" },
+  GOOGL: { name: "Alphabet Inc.", sector: "Technology", price: "164.52", chg: "-0.4%", up: false, ess: 72, essDelta: -3, toneGap: 31, nextEarnings: "Oct 29, 4:00pm ET", lastAnalyzed: "Oct 12, 2025" },
+  NVDA: { name: "NVIDIA Corp.", sector: "Semiconductors", price: "875.40", chg: "+2.1%", up: true, ess: 91, essDelta: 8, toneGap: 9, nextEarnings: "Nov 20, 4:00pm ET", lastAnalyzed: "Oct 11, 2025" },
+  TSLA: { name: "Tesla Inc.", sector: "Cons. Discretionary", price: "245.18", chg: "+3.2%", up: true, ess: 58, essDelta: 6, toneGap: 42, nextEarnings: "Oct 23, 4:00pm ET", lastAnalyzed: "Oct 10, 2025" },
+  JPM: { name: "JPMorgan Chase", sector: "Financials", price: "211.80", chg: "-0.6%", up: false, ess: 65, essDelta: -4, toneGap: 22, nextEarnings: "Oct 11, 7:00am ET", lastAnalyzed: "Oct 9, 2025" },
+  META: { name: "Meta Platforms", sector: "Technology", price: "536.30", chg: "+0.3%", up: true, ess: 79, essDelta: 1, toneGap: 18, nextEarnings: "Oct 30, 4:00pm ET", lastAnalyzed: "Oct 13, 2025" },
+  GS: { name: "Goldman Sachs", sector: "Financials", price: "488.44", chg: "+0.9%", up: true, ess: 73, essDelta: 2, toneGap: 16, nextEarnings: "Oct 15, 7:00am ET", lastAnalyzed: "Oct 8, 2025" },
 };
-
-const getCCIColor = (v: number) => v >= 75 ? "text-positive" : v >= 55 ? "text-caution" : "text-negative";
 
 const CompanyAnalysis = () => {
   const { ticker } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isFavorite, setIsFavorite] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportType, setExportType] = useState<"pdf" | "excel" | "csv">("pdf");
@@ -46,17 +52,18 @@ const CompanyAnalysis = () => {
 
   const company = COMPANY_DATA[ticker as string] || {
     name: ticker || "Unknown", sector: "—", price: "—", chg: "—", up: true,
-    cci: 0, cciDelta: 0, toneGap: 0, nextEarnings: "—", lastAnalyzed: "—",
+    ess: 0, essDelta: 0, toneGap: 0, nextEarnings: "—", lastAnalyzed: "—",
   };
 
   const tabs = [
     { label: "Overview", path: `/company/${ticker}`, shortcut: "1" },
     { label: "Scores", path: `/company/${ticker}/scores`, shortcut: "2" },
-    { label: "Mgmt Tone", path: `/company/${ticker}/tone`, shortcut: "3" },
-    { label: "Products", path: `/company/${ticker}/products`, shortcut: "4" },
-    { label: "Risks", path: `/company/${ticker}/risks`, shortcut: "5" },
-    { label: "Transcript", path: `/company/${ticker}/transcripts`, shortcut: "6" },
-    { label: "Calibration", path: `/company/${ticker}/playground`, shortcut: "7" },
+    { label: "Benchmark", path: `/company/${ticker}/benchmark`, shortcut: "3", external: `/compare?anchor=${ticker}` },
+    { label: "Mgmt Tone", path: `/company/${ticker}/tone`, shortcut: "4" },
+    { label: "Products", path: `/company/${ticker}/products`, shortcut: "5" },
+    { label: "Risks", path: `/company/${ticker}/risks`, shortcut: "6" },
+    { label: "Transcript", path: `/company/${ticker}/transcripts`, shortcut: "7" },
+    { label: "Calibration", path: `/company/${ticker}/playground`, shortcut: "8" },
   ];
 
   const isActiveTab = (path: string) =>
@@ -83,12 +90,23 @@ const CompanyAnalysis = () => {
           </span>
         </div>
 
-        {/* CCI */}
+        {/* ESS */}
         <div className="flex items-center gap-2 border-l border-border pl-4">
-          <span className="th-label">CCI</span>
-          <span className={`score-num text-lg ${getCCIColor(company.cci)}`}>{company.cci}</span>
-          <span className={`font-mono text-xs ${company.cciDelta >= 0 ? "delta-pos" : "delta-neg"}`}>
-            {company.cciDelta >= 0 ? "+" : ""}{company.cciDelta}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="th-label inline-flex items-center gap-1 cursor-default">
+                  ESS <Info className="h-3 w-3 text-text-tertiary" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs max-w-48">
+                {ESS_FORMULA_LABEL}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className={`score-num text-lg ${getESSColor(company.ess)}`}>{company.ess}</span>
+          <span className={`font-mono text-xs ${company.essDelta >= 0 ? "delta-pos" : "delta-neg"}`}>
+            {company.essDelta >= 0 ? "+" : ""}{company.essDelta}
           </span>
         </div>
 
@@ -157,22 +175,38 @@ const CompanyAnalysis = () => {
 
       {/* Sub-tabs */}
       <div className="border-b border-border bg-card flex items-center px-4 overflow-x-auto shrink-0">
-        {tabs.map(tab => (
-          <Link
-            key={tab.path}
-            to={tab.path}
-            className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 whitespace-nowrap transition-colors shrink-0 ${
-              isActiveTab(tab.path)
-                ? "border-primary text-foreground font-medium"
-                : "border-transparent text-text-secondary hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-            <kbd className="hidden xl:inline px-1 rounded bg-surface-elevated border border-border text-text-tertiary font-mono" style={{fontSize:"9px"}}>
-              {tab.shortcut}
-            </kbd>
-          </Link>
-        ))}
+        {tabs.map(tab => {
+          if ((tab as any).external) {
+            return (
+              <button
+                key={tab.path}
+                onClick={() => navigate((tab as any).external)}
+                className="flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 whitespace-nowrap transition-colors shrink-0 border-transparent text-text-secondary hover:text-foreground"
+              >
+                {tab.label}
+                <kbd className="hidden xl:inline px-1 rounded bg-surface-elevated border border-border text-text-tertiary font-mono" style={{fontSize:"9px"}}>
+                  {tab.shortcut}
+                </kbd>
+              </button>
+            );
+          }
+          return (
+            <Link
+              key={tab.path}
+              to={tab.path}
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-b-2 whitespace-nowrap transition-colors shrink-0 ${
+                isActiveTab(tab.path)
+                  ? "border-primary text-foreground font-medium"
+                  : "border-transparent text-text-secondary hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+              <kbd className="hidden xl:inline px-1 rounded bg-surface-elevated border border-border text-text-tertiary font-mono" style={{fontSize:"9px"}}>
+                {tab.shortcut}
+              </kbd>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Tab content */}

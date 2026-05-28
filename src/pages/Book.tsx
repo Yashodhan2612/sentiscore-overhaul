@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { ArrowUpRight, ArrowDownRight, Plus, X, LayoutGrid, Table2, Search } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Plus, X, LayoutGrid, Table2, Search, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,53 +10,51 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { getESSColor, getESSBg, ESS_FORMULA_LABEL } from "@/lib/ess";
+import { useRovingFocus } from "@/hooks/useRovingFocus";
+import KbdHint from "@/components/KbdHint";
 
 const INITIAL_WATCHLIST = [
-  { ticker: "AAPL", name: "Apple Inc.", sector: "Technology", cci: 78, cciDelta: +2, toneGap: 27, added: "Oct 1" },
-  { ticker: "MSFT", name: "Microsoft Corp.", sector: "Technology", cci: 84, cciDelta: +5, toneGap: 14, added: "Sep 15" },
-  { ticker: "NVDA", name: "NVIDIA Corp.", sector: "Semiconductors", cci: 91, cciDelta: +8, toneGap: 9, added: "Aug 20" },
-  { ticker: "GOOGL", name: "Alphabet Inc.", sector: "Technology", cci: 72, cciDelta: -3, toneGap: 31, added: "Oct 5" },
-  { ticker: "META", name: "Meta Platforms", sector: "Technology", cci: 79, cciDelta: +1, toneGap: 18, added: "Sep 28" },
-  { ticker: "JPM", name: "JPMorgan Chase", sector: "Financials", cci: 65, cciDelta: -4, toneGap: 22, added: "Oct 10" },
-  { ticker: "TSLA", name: "Tesla Inc.", sector: "Consumer Discretionary", cci: 58, cciDelta: +6, toneGap: 42, added: "Oct 12" },
-  { ticker: "GS", name: "Goldman Sachs", sector: "Financials", cci: 73, cciDelta: +2, toneGap: 16, added: "Sep 30" },
+  { ticker: "AAPL", name: "Apple Inc.", sector: "Technology", ess: 78, essDelta: +2, toneGap: 27, added: "Oct 1" },
+  { ticker: "MSFT", name: "Microsoft Corp.", sector: "Technology", ess: 84, essDelta: +5, toneGap: 14, added: "Sep 15" },
+  { ticker: "NVDA", name: "NVIDIA Corp.", sector: "Semiconductors", ess: 91, essDelta: +8, toneGap: 9, added: "Aug 20" },
+  { ticker: "GOOGL", name: "Alphabet Inc.", sector: "Technology", ess: 72, essDelta: -3, toneGap: 31, added: "Oct 5" },
+  { ticker: "META", name: "Meta Platforms", sector: "Technology", ess: 79, essDelta: +1, toneGap: 18, added: "Sep 28" },
+  { ticker: "JPM", name: "JPMorgan Chase", sector: "Financials", ess: 65, essDelta: -4, toneGap: 22, added: "Oct 10" },
+  { ticker: "TSLA", name: "Tesla Inc.", sector: "Consumer Discretionary", ess: 58, essDelta: +6, toneGap: 42, added: "Oct 12" },
+  { ticker: "GS", name: "Goldman Sachs", sector: "Financials", ess: 73, essDelta: +2, toneGap: 16, added: "Sep 30" },
 ];
 
 // Universe to search against when adding tickers
 const TICKER_UNIVERSE = [
-  { ticker: "AAPL", name: "Apple Inc.", sector: "Technology", cci: 78, cciDelta: +2, toneGap: 27 },
-  { ticker: "MSFT", name: "Microsoft Corp.", sector: "Technology", cci: 84, cciDelta: +5, toneGap: 14 },
-  { ticker: "NVDA", name: "NVIDIA Corp.", sector: "Semiconductors", cci: 91, cciDelta: +8, toneGap: 9 },
-  { ticker: "GOOGL", name: "Alphabet Inc.", sector: "Technology", cci: 72, cciDelta: -3, toneGap: 31 },
-  { ticker: "META", name: "Meta Platforms", sector: "Technology", cci: 79, cciDelta: +1, toneGap: 18 },
-  { ticker: "JPM", name: "JPMorgan Chase", sector: "Financials", cci: 65, cciDelta: -4, toneGap: 22 },
-  { ticker: "TSLA", name: "Tesla Inc.", sector: "Consumer Discretionary", cci: 58, cciDelta: +6, toneGap: 42 },
-  { ticker: "GS", name: "Goldman Sachs", sector: "Financials", cci: 73, cciDelta: +2, toneGap: 16 },
-  { ticker: "AMZN", name: "Amazon.com Inc.", sector: "Consumer Discretionary", cci: 75, cciDelta: +1, toneGap: 19 },
-  { ticker: "V", name: "Visa Inc.", sector: "Financials", cci: 77, cciDelta: +1, toneGap: 11 },
-  { ticker: "NFLX", name: "Netflix Inc.", sector: "Communication", cci: 80, cciDelta: +3, toneGap: 12 },
-  { ticker: "INTC", name: "Intel Corp.", sector: "Semiconductors", cci: 44, cciDelta: -6, toneGap: 38 },
-  { ticker: "BAC", name: "Bank of America", sector: "Financials", cci: 61, cciDelta: -2, toneGap: 25 },
-  { ticker: "UNH", name: "UnitedHealth Group", sector: "Healthcare", cci: 69, cciDelta: -2, toneGap: 20 },
-  { ticker: "EXXON", name: "ExxonMobil Corp.", sector: "Energy", cci: 67, cciDelta: +1, toneGap: 17 },
+  { ticker: "AAPL", name: "Apple Inc.", sector: "Technology", ess: 78, essDelta: +2, toneGap: 27 },
+  { ticker: "MSFT", name: "Microsoft Corp.", sector: "Technology", ess: 84, essDelta: +5, toneGap: 14 },
+  { ticker: "NVDA", name: "NVIDIA Corp.", sector: "Semiconductors", ess: 91, essDelta: +8, toneGap: 9 },
+  { ticker: "GOOGL", name: "Alphabet Inc.", sector: "Technology", ess: 72, essDelta: -3, toneGap: 31 },
+  { ticker: "META", name: "Meta Platforms", sector: "Technology", ess: 79, essDelta: +1, toneGap: 18 },
+  { ticker: "JPM", name: "JPMorgan Chase", sector: "Financials", ess: 65, essDelta: -4, toneGap: 22 },
+  { ticker: "TSLA", name: "Tesla Inc.", sector: "Consumer Discretionary", ess: 58, essDelta: +6, toneGap: 42 },
+  { ticker: "GS", name: "Goldman Sachs", sector: "Financials", ess: 73, essDelta: +2, toneGap: 16 },
+  { ticker: "AMZN", name: "Amazon.com Inc.", sector: "Consumer Discretionary", ess: 75, essDelta: +1, toneGap: 19 },
+  { ticker: "V", name: "Visa Inc.", sector: "Financials", ess: 77, essDelta: +1, toneGap: 11 },
+  { ticker: "NFLX", name: "Netflix Inc.", sector: "Communication", ess: 80, essDelta: +3, toneGap: 12 },
+  { ticker: "INTC", name: "Intel Corp.", sector: "Semiconductors", ess: 44, essDelta: -6, toneGap: 38 },
+  { ticker: "BAC", name: "Bank of America", sector: "Financials", ess: 61, essDelta: -2, toneGap: 25 },
+  { ticker: "UNH", name: "UnitedHealth Group", sector: "Healthcare", ess: 69, essDelta: -2, toneGap: 20 },
+  { ticker: "EXXON", name: "ExxonMobil Corp.", sector: "Energy", ess: 67, essDelta: +1, toneGap: 17 },
 ];
 
 type WatchItem = typeof INITIAL_WATCHLIST[0];
 
-const getCCIColor = (v: number) => {
-  if (v >= 75) return "text-positive";
-  if (v >= 55) return "text-caution";
-  return "text-negative";
-};
-
-const getCCIBg = (v: number) => {
-  if (v >= 75) return "bg-positive/10 border-positive/20";
-  if (v >= 55) return "bg-caution/10 border-caution/20";
-  return "bg-negative/10 border-negative/20";
-};
-
 const Book = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [watchlist, setWatchlist] = useState<WatchItem[]>(INITIAL_WATCHLIST);
   const [addOpen, setAddOpen] = useState(false);
@@ -92,6 +90,25 @@ const Book = () => {
     });
   };
 
+  // Roving focus for the table
+  const { getRowProps } = useRovingFocus({
+    count: watchlist.length,
+    active: !addOpen,
+    onEnter: (i) => navigate(`/company/${watchlist[i].ticker}`),
+    onDismiss: (i) => removeTicker(watchlist[i].ticker),
+  });
+
+  // Page-level shortcuts
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { action } = (e as CustomEvent).detail;
+      if (action === "a" && !addOpen) { setAddOpen(true); setSearchQuery(""); }
+      if (action === "v") setViewMode(m => m === "table" ? "grid" : "table");
+    };
+    document.addEventListener("key-action", handler);
+    return () => document.removeEventListener("key-action", handler);
+  }, [addOpen]);
+
   return (
     <Layout>
       <div className="flex items-center justify-between mb-4">
@@ -118,13 +135,15 @@ const Book = () => {
               <LayoutGrid className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <Button
-            size="sm"
-            className="h-7 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => { setAddOpen(true); setSearchQuery(""); }}
-          >
-            <Plus className="h-3.5 w-3.5" /> Add ticker
-          </Button>
+          <KbdHint k="a">
+            <Button
+              size="sm"
+              className="h-7 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => { setAddOpen(true); setSearchQuery(""); }}
+            >
+              <Plus className="h-3.5 w-3.5" /> Add ticker
+            </Button>
+          </KbdHint>
         </div>
       </div>
 
@@ -135,7 +154,20 @@ const Book = () => {
               <tr className="border-b border-border">
                 <th className="text-left px-3 py-2 th-label">Ticker</th>
                 <th className="text-left px-3 py-2 th-label">Sector</th>
-                <th className="text-right px-3 py-2 th-label">CCI</th>
+                <th className="text-right px-3 py-2 th-label">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex items-center gap-1 cursor-default">
+                          ESS <Info className="h-3 w-3 text-text-tertiary" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs max-w-48">
+                        {ESS_FORMULA_LABEL}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </th>
                 <th className="text-right px-3 py-2 th-label">Δ 7d</th>
                 <th className="text-right px-3 py-2 th-label">Tone Gap</th>
                 <th className="text-left px-3 py-2 th-label">Added</th>
@@ -143,8 +175,10 @@ const Book = () => {
               </tr>
             </thead>
             <tbody>
-              {watchlist.map(row => (
-                <tr key={row.ticker} className="border-b border-border last:border-0 hover:bg-surface-elevated transition-colors group">
+              {watchlist.map((row, idx) => {
+                const rowProps = getRowProps(idx);
+                return (
+                <tr key={row.ticker} {...rowProps as any} className={`border-b border-border last:border-0 hover:bg-surface-elevated transition-colors group ${rowProps.className}`}>
                   <td className="px-3 py-2.5">
                     <Link to={`/company/${row.ticker}`} className="flex flex-col">
                       <span className="ticker-badge text-primary">{row.ticker}</span>
@@ -153,12 +187,12 @@ const Book = () => {
                   </td>
                   <td className="px-3 py-2.5 text-xs text-text-secondary">{row.sector}</td>
                   <td className="px-3 py-2.5 text-right">
-                    <span className={`score-num text-sm ${getCCIColor(row.cci)}`}>{row.cci}</span>
+                    <span className={`score-num text-sm ${getESSColor(row.ess)}`}>{row.ess}</span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <span className={`font-mono text-xs flex items-center justify-end gap-0.5 ${row.cciDelta > 0 ? "delta-pos" : row.cciDelta < 0 ? "delta-neg" : "delta-muted"}`}>
-                      {row.cciDelta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                      {row.cciDelta > 0 ? "+" : ""}{row.cciDelta}
+                    <span className={`font-mono text-xs flex items-center justify-end gap-0.5 ${row.essDelta > 0 ? "delta-pos" : row.essDelta < 0 ? "delta-neg" : "delta-muted"}`}>
+                      {row.essDelta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                      {row.essDelta > 0 ? "+" : ""}{row.essDelta}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
@@ -177,7 +211,8 @@ const Book = () => {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -187,16 +222,16 @@ const Book = () => {
             <div key={row.ticker} className="relative group">
               <Link
                 to={`/company/${row.ticker}`}
-                className={`p-4 rounded border ${getCCIBg(row.cci)} hover:border-primary/40 transition-colors block`}
+                className={`p-4 rounded border ${getESSBg(row.ess)} hover:border-primary/40 transition-colors block`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <span className="ticker-badge text-primary">{row.ticker}</span>
-                  <span className={`font-mono text-xs ${row.cciDelta > 0 ? "delta-pos" : "delta-neg"}`}>
-                    {row.cciDelta > 0 ? "+" : ""}{row.cciDelta}
+                  <span className={`font-mono text-xs ${row.essDelta > 0 ? "delta-pos" : "delta-neg"}`}>
+                    {row.essDelta > 0 ? "+" : ""}{row.essDelta}
                   </span>
                 </div>
-                <div className={`score-num text-3xl ${getCCIColor(row.cci)} mb-1`}>{row.cci}</div>
-                <div className="text-xxs text-text-tertiary th-label">CCI</div>
+                <div className={`score-num text-3xl ${getESSColor(row.ess)} mb-1`}>{row.ess}</div>
+                <div className="text-xxs text-text-tertiary th-label">ESS</div>
                 <div className="mt-3 text-xs text-text-secondary truncate">{row.name}</div>
                 <div className="text-xxs text-text-tertiary mt-0.5">{row.sector}</div>
               </Link>
@@ -260,7 +295,7 @@ const Book = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`score-num text-sm ${getCCIColor(t.cci)}`}>{t.cci}</span>
+                    <span className={`score-num text-sm ${getESSColor(t.ess)}`}>{t.ess}</span>
                     <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">+ Add</span>
                   </div>
                 </button>

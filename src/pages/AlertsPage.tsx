@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { AlertTriangle, TrendingDown, Newspaper, Bell, Plus, Check, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useRovingFocus } from "@/hooks/useRovingFocus";
+import KbdHint from "@/components/KbdHint";
 
 const INITIAL_ALERTS = [
   {
@@ -25,8 +27,8 @@ const INITIAL_ALERTS = [
     type: "tone", triggered: true, msg: "Tone gap reached 42 (+3 from yesterday)",
   },
   {
-    id: 2, time: "05:58 ET", ticker: "GOOGL", rule: "CCI Δ < -3 pts", value: -3, threshold: -3,
-    type: "cci", triggered: true, msg: "CCI dropped 3 pts to 72 (was 75 yesterday)",
+    id: 2, time: "05:58 ET", ticker: "GOOGL", rule: "ESS Δ < -3 pts", value: -3, threshold: -3,
+    type: "ess", triggered: true, msg: "ESS dropped 3 pts to 72 (was 75 yesterday)",
   },
   {
     id: 3, time: "04:30 ET", ticker: "GOOGL", rule: "New High-Priority Risk", value: 2, threshold: 0,
@@ -37,25 +39,25 @@ const INITIAL_ALERTS = [
     type: "news", triggered: true, msg: "Reuters: JPMorgan credit card charge-offs rise to 3.6% in Sept",
   },
   {
-    id: 5, time: "Yesterday", ticker: "NVDA", rule: "CCI Δ > +5 pts", value: 8, threshold: 5,
-    type: "cci", triggered: true, msg: "CCI climbed 8 pts to 91 post-analyst day",
+    id: 5, time: "Yesterday", ticker: "NVDA", rule: "ESS Δ > +5 pts", value: 8, threshold: 5,
+    type: "ess", triggered: true, msg: "ESS climbed 8 pts to 91 post-analyst day",
   },
 ];
 
 const INITIAL_RULES = [
   { id: 1, ticker: "All", rule: "Tone Gap > 40", active: true },
-  { id: 2, ticker: "All", rule: "CCI Δ (1d) > ±5 pts", active: true },
+  { id: 2, ticker: "All", rule: "ESS Δ (1d) > ±5 pts", active: true },
   { id: 3, ticker: "All", rule: "New High-Priority Risk", active: true },
   { id: 4, ticker: "All", rule: "T1 Negative News", active: true },
-  { id: 5, ticker: "TSLA", rule: "CCI < 55", active: false },
+  { id: 5, ticker: "TSLA", rule: "ESS < 55", active: false },
 ];
 
 const RULE_TYPES = [
   "Tone Gap >",
-  "CCI Δ (1d) >",
-  "CCI Δ (1d) <",
-  "CCI <",
-  "CCI >",
+  "ESS Δ (1d) >",
+  "ESS Δ (1d) <",
+  "ESS <",
+  "ESS >",
   "New High-Priority Risk",
   "New Risk Identified",
   "T1 Negative News",
@@ -70,7 +72,7 @@ type Rule = typeof INITIAL_RULES[0];
 
 const typeIcon = (type: string) => {
   if (type === "tone") return <AlertTriangle className="h-3.5 w-3.5 text-negative" />;
-  if (type === "cci") return <TrendingDown className="h-3.5 w-3.5 text-caution" />;
+  if (type === "ess") return <TrendingDown className="h-3.5 w-3.5 text-caution" />;
   if (type === "news") return <Newspaper className="h-3.5 w-3.5 text-info" />;
   return <Bell className="h-3.5 w-3.5 text-text-secondary" />;
 };
@@ -125,6 +127,24 @@ const AlertsPage = () => {
 
   const triggeredCount = alerts.filter(a => a.time.includes("ET")).length;
 
+  // Roving focus for triggered alerts
+  const { getRowProps: getAlertProps } = useRovingFocus({
+    count: alerts.length,
+    active: tab === "triggered" && !newRuleOpen,
+    onDismiss: (i) => dismissAlert(alerts[i].id),
+  });
+
+  // Page shortcuts
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { action } = (e as CustomEvent).detail;
+      if (action === "n" && !newRuleOpen) setNewRuleOpen(true);
+      if (action === "Tab") setTab(t => t === "triggered" ? "rules" : "triggered");
+    };
+    document.addEventListener("key-action", handler);
+    return () => document.removeEventListener("key-action", handler);
+  }, [newRuleOpen]);
+
   return (
     <Layout>
       <div className="flex items-center justify-between mb-4">
@@ -132,13 +152,15 @@ const AlertsPage = () => {
           <h1 className="text-lg font-semibold">Alerts</h1>
           <p className="text-xs text-text-tertiary mt-0.5">{triggeredCount} triggered overnight</p>
         </div>
-        <Button
-          size="sm"
-          className="h-7 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => setNewRuleOpen(true)}
-        >
-          <Plus className="h-3.5 w-3.5" /> New rule
-        </Button>
+        <KbdHint k="n">
+          <Button
+            size="sm"
+            className="h-7 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => setNewRuleOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5" /> New rule
+          </Button>
+        </KbdHint>
       </div>
 
       {/* Tabs */}
@@ -165,8 +187,10 @@ const AlertsPage = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {alerts.map(alert => (
-              <div key={alert.id} className="flex items-start gap-3 p-3 bg-card border border-border rounded hover:border-border/80 transition-colors">
+            {alerts.map((alert, idx) => {
+              const rowProps = getAlertProps(idx);
+              return (
+              <div key={alert.id} {...rowProps as any} className={`flex items-start gap-3 p-3 bg-card border border-border rounded hover:border-border/80 transition-colors ${rowProps.className}`}>
                 <div className="mt-0.5 shrink-0">{typeIcon(alert.type)}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
@@ -192,7 +216,8 @@ const AlertsPage = () => {
                   <Check className="h-3.5 w-3.5" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         )
       ) : (

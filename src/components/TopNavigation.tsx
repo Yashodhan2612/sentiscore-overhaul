@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CommandPalette from "./CommandPalette";
 import { useTheme } from "@/contexts/ThemeContext";
+import KbdHint from "./KbdHint";
 
 const TICKERS = [
   { ticker: "AAPL", name: "Apple Inc." },
@@ -81,6 +82,19 @@ const TopNavigation = () => {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, []);
+
+  // Listen for key-action toggle-theme
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { action } = (e as CustomEvent).detail;
+      if (action === "toggle-theme") toggleTheme();
+      if (action === "shortcut-overlay" || action === "escape") {
+        // handled by ShortcutOverlay / other components
+      }
+    };
+    document.addEventListener("key-action", handler);
+    return () => document.removeEventListener("key-action", handler);
+  }, [toggleTheme]);
 
   const isActive = (href: string) =>
     href === "/" ? location.pathname === href : location.pathname.startsWith(href);
@@ -177,19 +191,21 @@ const TopNavigation = () => {
             </kbd>
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-7 w-7 relative text-text-secondary hover:text-foreground"
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-3.5 w-3.5" />
-            ) : (
-              <Moon className="h-3.5 w-3.5" />
-            )}
-          </Button>
+          <KbdHint k="t">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-7 w-7 relative text-text-secondary hover:text-foreground"
+              title={theme === "dark" ? "Switch to light mode (t)" : "Switch to dark mode (t)"}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-3.5 w-3.5" />
+              ) : (
+                <Moon className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </KbdHint>
 
           <Button variant="ghost" size="icon" className="h-7 w-7 relative text-text-secondary hover:text-foreground">
             <Bell className="h-3.5 w-3.5" />

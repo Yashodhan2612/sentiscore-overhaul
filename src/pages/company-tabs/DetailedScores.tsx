@@ -52,10 +52,18 @@ const DIMENSIONS = [
   { name: "Insider Divergence", abbr: "INDIV", group: "External",
     scores: { "Q4'22": 20, "Q1'23": 22, "Q2'23": 24, "Q3'23": 28, "Q4'23": 30, "Q1'24": 35, "Q2'24": 38, "Q3'24": 42 },
     lowerBetter: true },
-  { name: "ESS Layer 1", abbr: "ESS_L1", group: "Composite",
-    scores: { "Q4'22": 62, "Q1'23": 65, "Q2'23": 68, "Q3'23": 66, "Q4'23": 68, "Q1'24": 72, "Q2'24": 74, "Q3'24": 78 } },
-  { name: "Composite CCI", abbr: "CCI", group: "Composite",
-    scores: { "Q4'22": 60, "Q1'23": 63, "Q2'23": 66, "Q3'23": 64, "Q4'23": 66, "Q1'24": 70, "Q2'24": 72, "Q3'24": 76 } },
+  { name: "OSS Composite (L1)", abbr: "OSS-L1", group: "Composite",
+    scores: { "Q4'22": 62, "Q1'23": 65, "Q2'23": 68, "Q3'23": 66, "Q4'23": 68, "Q1'24": 72, "Q2'24": 74, "Q3'24": 78 },
+    description: "L1 transcript-derived OSS aggregate. Weighted 50% in ESS." },
+  { name: "NSS Composite (L2)", abbr: "NSS-L2", group: "Composite",
+    scores: { "Q4'22": 58, "Q1'23": 61, "Q2'23": 64, "Q3'23": 62, "Q4'23": 64, "Q1'24": 67, "Q2'24": 70, "Q3'24": 72 },
+    description: "L2 news sentiment aggregate (NSS). Weighted 30% in ESS." },
+  { name: "SSS Composite (L3)", abbr: "SSS-L3", group: "Composite",
+    scores: { "Q4'22": 54, "Q1'23": 57, "Q2'23": 60, "Q3'23": 58, "Q4'23": 60, "Q1'24": 63, "Q2'24": 65, "Q3'24": 68 },
+    description: "L3 social sentiment aggregate (SSS). Weighted 20% in ESS." },
+  { name: "ESS (Extended SentiScore)", abbr: "ESS", group: "Composite",
+    scores: { "Q4'22": 60, "Q1'23": 63, "Q2'23": 66, "Q3'23": 64, "Q4'23": 66, "Q1'24": 70, "Q2'24": 72, "Q3'24": 76 },
+    description: "ESS = 50% OSS (L1) + 30% NSS (L2) + 20% SSS (L3). Primary composite score." },
 ];
 
 const QUARTERS = ["Q4'22","Q1'23","Q2'23","Q3'23","Q4'23","Q1'24","Q2'24","Q3'24"];

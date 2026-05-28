@@ -33,7 +33,7 @@ const BASELINE = [
   { name: "PPI", abbr: "PPI", value: 72, group: "Tone" },
   { name: "CQTI", abbr: "CQTI", value: 45, group: "Tone" },
   { name: "Tone Gap", abbr: "TG", value: 27, group: "Tone", lowerBetter: true },
-  { name: "Composite CCI", abbr: "CCI", value: 74, group: "Composite" },
+  { name: "ESS (Extended SentiScore)", abbr: "ESS", value: 74, group: "Composite" },
 ];
 
 type Params = typeof DEFAULT_PARAMS;
@@ -45,7 +45,7 @@ const calcAdjusted = (base: typeof BASELINE, params: Params) =>
     if (s.abbr === "OSS") { adj += (params.hedgingPenalty - 1) * -8; adj += (params.specificityBonus - 1) * 5; }
     if (s.abbr === "SV") adj += (params.volatilitySensitivity - 50) / 5;
     if (s.abbr === "CON") adj += (params.confidenceThreshold - 50) / 10;
-    if (s.abbr === "CCI") adj = (
+    if (s.abbr === "ESS") adj = (
       ((params.promotionalWeight - 1) * 5) +
       ((params.specificityBonus - 1) * 3) +
       ((params.confidenceThreshold - 50) / 15)
@@ -69,7 +69,7 @@ const Playground = () => {
     setParams(p => ({ ...p, [key]: val }));
 
   const PARAM_CONFIG = [
-    { key: "promotionalWeight" as keyof Params, label: "Promotional Weight", min: 0.5, max: 1.5, step: 0.05, fmt: (v: number) => v.toFixed(2), desc: "Scales PPI contribution to CCI" },
+    { key: "promotionalWeight" as keyof Params, label: "Promotional Weight", min: 0.5, max: 1.5, step: 0.05, fmt: (v: number) => v.toFixed(2), desc: "Scales PPI contribution to ESS" },
     { key: "hedgingPenalty" as keyof Params, label: "Hedging Penalty", min: 0.5, max: 1.5, step: 0.05, fmt: (v: number) => v.toFixed(2), desc: "Penalizes hedged/uncertain language" },
     { key: "specificityBonus" as keyof Params, label: "Specificity Bonus", min: 0.5, max: 1.5, step: 0.05, fmt: (v: number) => v.toFixed(2), desc: "Rewards quantitative specificity" },
     { key: "confidenceThreshold" as keyof Params, label: "Confidence Threshold", min: 0, max: 100, step: 5, fmt: (v: number) => `${v}`, desc: "Min confidence level to count as strong signal" },

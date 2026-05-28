@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, ChevronRight, TrendingUp, Clock } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, AlertTriangle, ChevronRight, TrendingUp, Clock, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getESSColor, ESS_FORMULA_LABEL } from "@/lib/ess";
 
 const MACRO = [
   { label: "SPX", value: "5,842.47", change: "+0.34%", up: true },
@@ -15,59 +22,53 @@ const MACRO = [
 const BOOK = [
   {
     ticker: "AAPL", name: "Apple Inc.", last: "232.14", chg1d: "+0.8%", chg1dUp: true,
-    cci: 78, cciDelta: +2, toneGap: 27, newRisks: 0, newsT1: 3, newsT2: 5,
+    ess: 78, essDelta: +2, toneGap: 27, newRisks: 0, newsT1: 3, newsT2: 5,
     nextEarnings: "Oct 30, 4pm ET",
     summary: "Services revenue beat by 180bps; China down 3% YoY; management guided flat margins for Q4.",
   },
   {
     ticker: "MSFT", name: "Microsoft Corp.", last: "418.92", chg1d: "+1.2%", chg1dUp: true,
-    cci: 84, cciDelta: +5, toneGap: 14, newRisks: 0, newsT1: 2, newsT2: 4,
+    ess: 84, essDelta: +5, toneGap: 14, newRisks: 0, newsT1: 2, newsT2: 4,
     nextEarnings: "Oct 23, 4pm ET",
     summary: "Azure growth re-accelerated to 29%; copilot seat expansion ahead of consensus.",
   },
   {
     ticker: "NVDA", name: "NVIDIA Corp.", last: "875.40", chg1d: "+2.1%", chg1dUp: true,
-    cci: 91, cciDelta: +8, toneGap: 9, newRisks: 1, newsT1: 6, newsT2: 8,
+    ess: 91, essDelta: +8, toneGap: 9, newRisks: 1, newsT1: 6, newsT2: 8,
     nextEarnings: "Nov 20, 4pm ET",
     summary: "Blackwell shipments confirmed for Q4; supply constraint cited as only near-term risk.",
   },
   {
     ticker: "GOOGL", name: "Alphabet Inc.", last: "164.52", chg1d: "-0.4%", chg1dUp: false,
-    cci: 72, cciDelta: -3, toneGap: 31, newRisks: 2, newsT1: 4, newsT2: 3,
+    ess: 72, essDelta: -3, toneGap: 31, newRisks: 2, newsT1: 4, newsT2: 3,
     nextEarnings: "Oct 29, 4pm ET",
     summary: "DOJ antitrust verdict risk elevated; Search share steady; Waymo optionality unpriced.",
   },
   {
     ticker: "META", name: "Meta Platforms", last: "536.30", chg1d: "+0.3%", chg1dUp: true,
-    cci: 79, cciDelta: +1, toneGap: 18, newRisks: 0, newsT1: 2, newsT2: 5,
+    ess: 79, essDelta: +1, toneGap: 18, newRisks: 0, newsT1: 2, newsT2: 5,
     nextEarnings: "Oct 30, 4pm ET",
     summary: "Ad ARPU inflecting higher; Reality Labs losses stabilizing. AI spend guidance key watch.",
   },
   {
     ticker: "JPM", name: "JPMorgan Chase", last: "211.80", chg1d: "-0.6%", chg1dUp: false,
-    cci: 65, cciDelta: -4, toneGap: 22, newRisks: 1, newsT1: 1, newsT2: 3,
+    ess: 65, essDelta: -4, toneGap: 22, newRisks: 1, newsT1: 1, newsT2: 3,
     nextEarnings: "Oct 11, 7am ET",
     summary: "NII guidance trimmed by $500M; credit card net charge-offs tracking slightly above model.",
   },
   {
     ticker: "TSLA", name: "Tesla Inc.", last: "245.18", chg1d: "+3.2%", chg1dUp: true,
-    cci: 58, cciDelta: +6, toneGap: 42, newRisks: 3, newsT1: 7, newsT2: 9,
+    ess: 58, essDelta: +6, toneGap: 42, newRisks: 3, newsT1: 7, newsT2: 9,
     nextEarnings: "Oct 23, 4pm ET",
     summary: "High tone gap — prepared remarks bullish on energy; Q&A deflective on margin path.",
   },
   {
     ticker: "GS", name: "Goldman Sachs", last: "488.44", chg1d: "+0.9%", chg1dUp: true,
-    cci: 73, cciDelta: +2, toneGap: 16, newRisks: 0, newsT1: 2, newsT2: 2,
+    ess: 73, essDelta: +2, toneGap: 16, newRisks: 0, newsT1: 2, newsT2: 2,
     nextEarnings: "Oct 15, 7am ET",
     summary: "IB revenue recovery on track; AM fee revenue +11% YoY; provisioning light.",
   },
 ];
-
-const getCCIColor = (v: number) => {
-  if (v >= 75) return "text-positive";
-  if (v >= 55) return "text-caution";
-  return "text-negative";
-};
 
 const getToneGapBadge = (v: number) => {
   if (v >= 30) return "text-negative";
@@ -121,7 +122,20 @@ const MorningBrief = () => {
               <th className="text-left px-3 py-2 th-label w-32">Ticker</th>
               <th className="text-right px-3 py-2 th-label w-20">Last</th>
               <th className="text-right px-3 py-2 th-label w-16">1D%</th>
-              <th className="text-right px-3 py-2 th-label w-20">CCI</th>
+              <th className="text-right px-3 py-2 th-label w-20">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 cursor-default">
+                        ESS <Info className="h-3 w-3 text-text-tertiary" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs max-w-48">
+                      {ESS_FORMULA_LABEL}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </th>
               <th className="text-right px-3 py-2 th-label w-20">Δ 24h</th>
               <th className="text-right px-3 py-2 th-label w-20">Tone Gap</th>
               <th className="text-right px-3 py-2 th-label w-20">New Risks</th>
@@ -153,11 +167,11 @@ const MorningBrief = () => {
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <span className={`score-num text-sm ${getCCIColor(row.cci)}`}>{row.cci}</span>
+                    <span className={`score-num text-sm ${getESSColor(row.ess)}`}>{row.ess}</span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <span className={`font-mono text-xs ${row.cciDelta > 0 ? "delta-pos" : row.cciDelta < 0 ? "delta-neg" : "delta-muted"}`}>
-                      {row.cciDelta > 0 ? "+" : ""}{row.cciDelta}
+                    <span className={`font-mono text-xs ${row.essDelta > 0 ? "delta-pos" : row.essDelta < 0 ? "delta-neg" : "delta-muted"}`}>
+                      {row.essDelta > 0 ? "+" : ""}{row.essDelta}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
